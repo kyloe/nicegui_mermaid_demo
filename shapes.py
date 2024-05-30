@@ -1,3 +1,7 @@
+import logging
+log = logging.getLogger(__name__)
+
+
 node_shapes = {
     'rectangle':('[',']'),
     'rounded_rectangle':('(',')'),
@@ -25,6 +29,11 @@ arrow_thickness = {
             'pre':'=',
             'post':'='
         },
+    'invisible':
+        {
+            'pre':'~',
+            'post':'~'
+        },
     'dotted':
         {
             'pre':'-.',
@@ -32,7 +41,7 @@ arrow_thickness = {
         }
     }
 arrow_head = {'point':'>','circle':'o','cross':'x'}
-arrow_tail = {'circle':'o'}
+arrow_tail = {'point':'<','circle':'o','cross':'x'}
 
 
 
@@ -40,7 +49,8 @@ class Shape():
     
     def __init__(self,shape_name='rectangle'):
         if shape_name not in node_shapes:
-            raise Exception(f"Invalid shape requested: {shape_name}.")
+            log.warning(f"{shape_name} is not a recognised shape: substitued 'stadium'")
+            shape_name = 'stadium'
         self._shape = node_shapes[shape_name]
     
     def get_opener(self) -> str:
@@ -49,14 +59,21 @@ class Shape():
     def get_closer(self) -> str:
         return self._shape[1]
 
-
 class Arrow():
-    def __init__(self,thickness='thin',length=2,head='point',tail=None,label=None):
-        pre_bar = ''.join([arrow_thickness[thickness]['pre']]*length)
-        post_bar = ''.join([arrow_thickness[thickness]['post']]*length)
-        bar = pre_bar + label + post_bar if label else pre_bar
-        t = arrow_tail[tail] if tail in arrow_tail else ''
-        h = arrow_head[head] if head in arrow_head else ''
+    def __init__(self,**kwargs):
+        self._thickness = kwargs.get('thickness','thin')
+        self._head = kwargs.get('head',None)
+        self._tail = kwargs.get('tail',None)
+        self._label = kwargs.get('label',None)
+        self._length = kwargs.get('length',2)
+
+        pre_bar = ''.join([arrow_thickness[self._thickness]['pre']]*self._length)
+        post_bar = ''.join([arrow_thickness[self._thickness]['post']]*self._length)
+        bar = pre_bar + self._label + post_bar if self._label else pre_bar
+        if 'point' in [self._tail,self._head]:
+            log.warning(f"Crosses and circles ignored when arrow heads are used")
+        t = arrow_tail[self._tail] if self._tail in arrow_tail else ''
+        h = arrow_head[self._head] if self._head in arrow_head else ''
         self._arrow = t+bar+h
 
     def __str__(self):
